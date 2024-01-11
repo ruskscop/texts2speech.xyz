@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta property="og:title" content="A free Text to Speech Generator">
+    <meta name="otheme-color" content="#BF40BF"/>
+    <meta name="description" content="Free text-to-speech generator tool with multiple voice types and unlimited words."/>
+    <meta name="author" content="RuskyDev">
+    <meta name='url' content='https://text2speech.cc'>
+    <title>Text to Speech</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+    />
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
+    <script src="https://cdn.jsdelivr.net/npm/js-cookie@3.0.1/dist/js.cookie.min.js"></script>
+  </head>
+  <body class="bg-gray-200 min-h-screen flex items-center justify-center">
+    <div
+      class="bg-white p-8 rounded shadow-md w-full md:w-96 animate__animated animate__fadeIn"
+    >
+      <h1 class="text-2xl font-bold mb-6 text-center">Text to Speech</h1>
+
+      <form id="ttsForm">
+        <div class="mb-4">
+          <label for="text" class="block text-gray-700 font-bold mb-2"
+            >Text to Convert:</label
+          >
+          <textarea
+            id="text"
+            name="text"
+            rows="4"
+            class="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500 transition duration-300 ease-in-out"
+            required
+          ></textarea>
+        </div>
+
+        <div class="mb-4">
+          <label for="VoiceType" class="block text-gray-700 font-bold mb-2"
+            >Select Voice Type:</label
+          >
+          <select
+            id="VoiceType"
+            name="VoiceType"
+            class="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500 transition duration-300 ease-in-out"
+          >
+            <option value="female">Female</option>
+            <option value="male">Male</option>
+          </select>
+        </div>
+
+        <button
+          type="button"
+          onclick="convertToSpeech()"
+          id="convertButton"
+          class="w-full bg-purple-500 text-white py-2 px-4 rounded hover:bg-purple-700 focus:outline-none focus:shadow-outline-purple transition duration-300 ease-in-out"
+        >
+          Convert to Speech
+        </button>
+
+        <audio
+          id="audioPreview"
+          controls
+          class="mt-4"
+          style="display: none"
+          controlslist="nodownload"
+        ></audio>
+        <div class="flex justify-center mt-4">
+          <a href="https://dsc.gg/ruskydev" target="_blank" class="mx-2">
+            <img
+              src="https://img.icons8.com/color/48/000000/discord-new-logo.png"
+              alt="Discord"
+              class="w-8 h-8"
+            />
+          </a>
+          <a href="https://github.com/ruskydev" target="_blank" class="mx-2">
+            <img
+              src="https://img.icons8.com/ios/50/000000/github.png"
+              alt="GitHub"
+              class="w-8 h-8"
+            />
+          </a>
+          <a
+            href="https://twitter.com/rusky_offical"
+            target="_blank"
+            class="mx-2"
+          >
+            <img
+              src="https://img.icons8.com/ios/50/000000/x.png"
+              alt="Twitter"
+              class="w-8 h-8"
+            />
+          </a>
+        </div>
+
+        <div
+          id="welcomePopup"
+          class="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex items-center justify-center hidden"
+        >
+          <div class="bg-white p-8 rounded shadow-md text-center">
+            <p class="text-lg font-semibold mb-4">Welcome to Text to Speech!</p>
+            <p class="text-sm mb-4">
+              Turn any text into speech with ease. Simply enter your text,
+              choose the voice type, and click "Convert to Speech."
+            </p>
+            <p class="text-sm">
+              Explore the features and enjoy your experience!
+            </p>
+            <button
+              onclick="closeWelcomePopup()"
+              class="mt-6 bg-purple-500 text-white py-2 px-4 rounded hover:bg-purple-700 focus:outline-none focus:shadow-outline-purple"
+            >
+              Got it!
+            </button>
+          </div>
+        </div>
+      </form>      
+    </div>
+    <script>
+      const hasVisitedBefore = Cookies.get("visitedBefore");
+
+      if (!hasVisitedBefore) {
+        const welcomePopup = document.getElementById("welcomePopup");
+        welcomePopup.style.display = "flex";
+        Cookies.set("visitedBefore", true, { expires: 365 });
+      }
+
+      async function convertToSpeech() {
+        const form = document.getElementById("ttsForm");
+        const formData = new FormData(form);
+        const button = document.getElementById("convertButton");
+        const audioPreview = document.getElementById("audioPreview");
+        const textInput = document.getElementById("text");
+
+        if (textInput.value.trim() === "") {
+          alert("Please enter text to convert to speech.");
+          return;
+        }
+
+        button.innerText = "Please wait...";
+        button.classList.remove("hover:bg-purple-700");
+
+        try {
+          const timestamp = new Date().getTime();
+          const response = await fetch(`/api/tts?timestamp=${timestamp}`, {
+            method: "POST",
+            body: formData,
+          });
+
+          if (response.ok) {
+            button.innerText = "Download voice";
+            button.classList.add("bg-purple-500", "hover:bg-purple-700");
+            button.onclick = () => {
+              window.location.href = `/api/tts/download?timestamp=${timestamp}`;
+              button.innerText = "Convert to Speech";
+              button.classList.add("bg-purple-500", "hover:bg-purple-700");
+              button.onclick = convertToSpeech;
+            };
+            audioPreview.src = `/api/tts/preview?timestamp=${timestamp}`;
+            audioPreview.style.display = "block";
+          } else {
+            button.innerText = "Convert to Speech";
+            console.error("[ERROR] Speech conversion failed");
+          }
+        } catch (error) {
+          button.innerText = "Convert to Speech";
+          console.error("[ERROR] during speech conversion:", error);
+        }
+      }
+
+      function closeWelcomePopup() {
+        const welcomePopup = document.getElementById("welcomePopup");
+        welcomePopup.style.display = "none";
+      }
+    </script>
+  </body>
+</html>
+  

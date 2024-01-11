@@ -1,0 +1,5 @@
+flask
+pyttsx3
+flask_limiter
+python-espeak
+flask-cors
